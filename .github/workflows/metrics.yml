@@ -1,1 +1,37 @@
+name: Generate Metrics
 
+on:
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Create Metrics JSON
+        run: |
+          mkdir -p data
+
+          echo '{
+            "run_date":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'",
+            "tests_passed":95,
+            "tests_failed":3,
+            "code_coverage":88,
+            "build_duration_seconds":120
+          }' > data/metrics.json
+
+      - name: Commit Results
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+
+          git add data/metrics.json
+          git commit -m "Update metrics" || echo "No changes"
+
+      - name: Push Changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}

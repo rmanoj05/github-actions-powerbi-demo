@@ -1,0 +1,36 @@
+name: Export GitHub Metrics
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get workflow runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p data
+
+          curl \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/runs \
+            > data/workflow_runs.json
+
+      - name: Commit data
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+
+          git add data/workflow_runs.json
+          git commit -m "Update workflow metrics" || echo "No changes"
+          git push
